@@ -393,6 +393,23 @@ function start()
             })
             old_selected_type = selected_type
         end
+
+        local weapon_image = this.world:createEntityEx({
+            gui_image = {
+                sprite = "ui/" .. string.match(tower_types[idx].weapon, "models/(weapon%-%w+)%.fbx") .. ".spr"
+            },
+            gui_rect = {
+                left_relative = 0.5,
+                left_points = -35,
+                right_relative = 0.5,
+                right_points = 35,
+                top_relative = 0.5,
+                top_points = -35,
+                bottom_relative = 0.5,
+                bottom_points = 35
+            }
+        })
+        weapon_image.parent = button
     end
     
     -- Initialize passable grid
@@ -944,11 +961,5 @@ function isTilePlaceable(x, z)
     if x < 1 or x > GRID_SIZE or z < 1 or z > GRID_SIZE then return false end
     if path_set and path_set[x .. "," .. z] then return false end
     if river_set and river_set[x .. "," .. z] then return false end
-    return true
-end
-
--- helper: check if tile is outside grid
-function isTileOutsideGrid(x, z)
-    if x < 1 or x > GRID_SIZE or z < 1 or z > GRID_SIZE then return false end
     return true
 end

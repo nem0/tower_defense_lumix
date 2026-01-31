@@ -1,0 +1,6 @@
+type = simple
+top = -858993460
+bottom = -858993460
+left = -858993460
+right = -858993460
+texture = "/ui/PNG/weapon-catapult.tga"
