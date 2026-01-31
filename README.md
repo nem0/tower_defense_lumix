@@ -6,6 +6,10 @@ A tower defense game project built using the Lumix game engine.
 
 This is a tower defense game featuring various towers, enemies, and particle effects. The game is scripted in Lua and includes UI elements and 3D models.
 
+## Screenshots
+
+![Tower Defense Game Screenshot](screenshot.png)
+
 ## Features
 
 - Multiple tower types
