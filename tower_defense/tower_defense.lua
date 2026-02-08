@@ -65,48 +65,48 @@ local countdown_text = nil
 local pulsate_time = 0
 local tower_types = {
     {
-        model = "models/tower-round-build-c.fbx",
-        weapon = "models/weapon-cannon.fbx",
+        model = "tower_defense/models/tower-round-build-c.fbx",
+        weapon = "tower_defense/models/weapon-cannon.fbx",
         range = 10,
         damage = 20,
         fireRate = 1,
-        ammo = "models/weapon-ammo-cannonball.fbx",
+        ammo = "tower_defense/models/weapon-ammo-cannonball.fbx",
         speed = 5,
         scale = 1.0,
         rotationSpeed = 1.0,
         cost = 100
     },
     {
-        model = "models/tower-round-build-a.fbx",
-        weapon = "models/weapon-turret.fbx",
+        model = "tower_defense/models/tower-round-build-a.fbx",
+        weapon = "tower_defense/models/weapon-turret.fbx",
         range = 12,
         damage = 25,
         fireRate = 0.8,
-        ammo = "models/weapon-ammo-bullet.fbx",
+        ammo = "tower_defense/models/weapon-ammo-bullet.fbx",
         speed = 8,
         scale = 1.0,
         rotationSpeed = 2.0,
         cost = 150
     },
     {
-        model = "models/tower-round-build-b.fbx",
-        weapon = "models/weapon-catapult.fbx",
+        model = "tower_defense/models/tower-round-build-b.fbx",
+        weapon = "tower_defense/models/weapon-catapult.fbx",
         range = 8,
         damage = 30,
         fireRate = 0.5,
-        ammo = "models/weapon-ammo-boulder.fbx",
+        ammo = "tower_defense/models/weapon-ammo-boulder.fbx",
         speed = 4,
         scale = 1.0,
         rotationSpeed = 0.5,
         cost = 200
     },
     {
-        model = "models/tower-square-build-a.fbx",
-        weapon = "models/weapon-ballista.fbx",
+        model = "tower_defense/models/tower-square-build-a.fbx",
+        weapon = "tower_defense/models/weapon-ballista.fbx",
         range = 11,
         damage = 22,
         fireRate = 1.1,
-        ammo = "models/weapon-ammo-arrow.fbx",
+        ammo = "tower_defense/models/weapon-ammo-arrow.fbx",
         speed = 6,
         scale = 1.0,
         rotationSpeed = 1.5,
@@ -115,25 +115,25 @@ local tower_types = {
 }
 local enemy_types = {
     {
-        model = "models/enemy-ufo-a.fbx",
+        model = "tower_defense/models/enemy-ufo-a.fbx",
         speed = 2.0,
         hp = 100,
         scale = 0.7
     },
     {
-        model = "models/enemy-ufo-b.fbx",
+        model = "tower_defense/models/enemy-ufo-b.fbx",
         speed = 2.5,
         hp = 80,
         scale = 0.7
     },
     {
-        model = "models/enemy-ufo-c.fbx",
+        model = "tower_defense/models/enemy-ufo-c.fbx",
         speed = 1.5,
         hp = 150,
         scale = 0.7
     },
     {
-        model = "models/enemy-ufo-d.fbx",
+        model = "tower_defense/models/enemy-ufo-d.fbx",
         speed = 2.2,
         hp = 120,
         scale = 0.7
@@ -458,7 +458,7 @@ function start()
 
         local weapon_image = this.world:createEntityEx({
             gui_image = {
-                sprite = "ui/" .. string.match(tower_types[idx].weapon, "models/(weapon%-%w+)%.fbx") .. ".spr"
+                sprite = "ui/" .. string.match(tower_types[idx].weapon, "tower_defense/models/(weapon%-%w+)%.fbx") .. ".spr"
             },
             gui_rect = {
                 left_relative = 0.5,
@@ -494,7 +494,7 @@ function start()
     -- Create waypoint models
     for i, waypoint in ipairs(waypoints) do
         local waypoint_pos = {(waypoint.x - GRID_WIDTH / 2) * TILE_SPACING, TOWER_OFFSET_Y, (waypoint.z - GRID_HEIGHT / 2) * TILE_SPACING}
-        local model = (i % 2 == 1) and "models/snow-wood-structure-high.fbx" or "models/snow-wood-structure.fbx"
+        local model = (i % 2 == 1) and "tower_defense/models/snow-wood-structure-high.fbx" or "tower_defense/models/snow-wood-structure.fbx"
         this.world:createEntityEx({
             position = waypoint_pos,
             model_instance = {source = model}
@@ -508,16 +508,16 @@ function start()
         local dir
         if i == 1 then
             dir = get_dir(path_tiles[1], path_tiles[2])
-            path_models[i] = "models/tile-straight.fbx"
+            path_models[i] = "tower_defense/models/tile-straight.fbx"
         elseif i == #path_tiles then
             dir = get_dir(path_tiles[#path_tiles-1], path_tiles[#path_tiles])
-            path_models[i] = "models/tile-straight.fbx"
+            path_models[i] = "tower_defense/models/tile-straight.fbx"
         else
             local dir1 = get_dir(path_tiles[i-1], path_tiles[i])
             local dir2 = get_dir(path_tiles[i], path_tiles[i+1])
             if dir1 == dir2 then
                 dir = dir1
-                path_models[i] = "models/tile-straight.fbx"
+                path_models[i] = "tower_defense/models/tile-straight.fbx"
             else
                 local diff = (dir2 - dir1 + 4) % 4
                 if diff == 1 then
@@ -527,7 +527,7 @@ function start()
                 else
                     dir = dir2
                 end
-                path_models[i] = "models/tile-corner-round.fbx"
+                path_models[i] = "tower_defense/models/tile-corner-round.fbx"
             end
         end
         -- set rotation
@@ -579,17 +579,17 @@ function start()
     for x = 1 - 15, GRID_WIDTH + 15 do
         for z = 1 - 15, GRID_HEIGHT + 15 do
             local pos = {(x - GRID_WIDTH / 2) * TILE_SPACING, 0, (z - GRID_HEIGHT / 2) * TILE_SPACING}
-            local model = "models/tile.fbx"
+            local model = "tower_defense/models/tile.fbx"
             local rot = nil
-            local override_mat = "models/ground.mat"
+            local override_mat = "tower_defense/models/ground.mat"
             local key = x .. "," .. z
             if x >= 1 and x <= GRID_WIDTH and z >= 1 and z <= GRID_HEIGHT then
                 if x == map_start.x and z == map_start.z then
-                    model = "models/tile-spawn.fbx"
+                    model = "tower_defense/models/tile-spawn.fbx"
                     rot = start_rot
                     override_mat = nil
                 elseif x == map_end.x and z == map_end.z then
-                    model = "models/tile-spawn-end.fbx"
+                    model = "tower_defense/models/tile-spawn-end.fbx"
                     rot = end_rot
                     override_mat = nil
                 elseif path_set[key] then
@@ -616,15 +616,15 @@ function start()
 
     -- Fill all non-path tiles with four trees each at scale 0.5
     local tree_models = {
-        "models/detail-tree.fbx",
-        "models/detail-tree-large.fbx",
-        --"models/quaternius/PineTree_1.fbx",
-        --"models/quaternius/PineTree_2.fbx",
-        --"models/quaternius/PineTree_3.fbx",
-        --"models/quaternius/PineTree_4.fbx",
-        --"models/quaternius/PineTree_5.fbx",
-        --"models/quaternius/Resource_PineTree.fbx",
-        --"models/quaternius/BirchTree_Dead_4.fbx",
+        "tower_defense/models/detail-tree.fbx",
+        "tower_defense/models/detail-tree-large.fbx",
+        --"tower_defense/models/quaternius/PineTree_1.fbx",
+        --"tower_defense/models/quaternius/PineTree_2.fbx",
+        --"tower_defense/models/quaternius/PineTree_3.fbx",
+        --"tower_defense/models/quaternius/PineTree_4.fbx",
+        --"tower_defense/models/quaternius/PineTree_5.fbx",
+        --"tower_defense/models/quaternius/Resource_PineTree.fbx",
+        --"tower_defense/models/quaternius/BirchTree_Dead_4.fbx",
     }
     -- Offsets within a tile to place 4 models (corners)
     local half_offset = 0.25 * TILE_SPACING
@@ -692,7 +692,7 @@ function start()
                     local rock_angle = math.random() * 2 * math.pi  -- Random rotation
                     local half_angle = rock_angle / 2
                     local rock_rot = {0, math.sin(half_angle), 0, math.cos(half_angle)}
-                    local rock_models = {"models/detail-rocks.fbx", "models/detail-dirt.fbx"}
+                    local rock_models = {"tower_defense/models/detail-rocks.fbx", "tower_defense/models/detail-dirt.fbx"}
                     local rock = this.world:createEntityEx({
                         position = pos,
                         rotation = rock_rot,
