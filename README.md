@@ -4,8 +4,10 @@ A small collection of sample projects built with the Lumix game engine.
 
 ## Projects
 
-- **Tower Defense**: [tower_defense/README.md](tower_defense/README.md)
-- **Chess**: [chess/README.md](chess/README.md)
+| Project | Screenshot | Docs |
+| --- | --- | --- |
+| Tower Defense | <a href="tower_defense/README.md"><img src="tower_defense/screenshot.png" width="320" /></a> | [tower_defense/README.md](tower_defense/README.md) |
+| Chess | <a href="chess/README.md"><img src="chess/screenshot.png" width="320" /></a> | [chess/README.md](chess/README.md) |
 
 ## License
 
