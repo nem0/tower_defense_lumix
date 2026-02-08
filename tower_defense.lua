@@ -18,7 +18,7 @@ local AIM_TOLERANCE = 0.1  -- Radians tolerance for aiming before firing
 local TREE_OFFSET_Y = 0.15  -- Adjust this to position trees above terrain
 local TREE_PROBABILITY = 0.7 -- Chance (0..1) to populate a non-path tile with trees
 local TREE_JITTER = 0.4 -- Max random additional offset as fraction of TILE_SPACING
-local TREES_PER_TILE = 16 -- Number of tree models to place on a populated tile
+local TREES_PER_TILE = 8 -- Number of tree models to place on a populated tile
 local ROCK_OFFSET_Y = 0.15  -- Adjust this to position rocks above terrain
 local ROCK_PROBABILITY = 0.3 -- Chance (0..1) to place a rock on a tile
 local ROCK_JITTER = 0.3 -- Max random additional offset as fraction of TILE_SPACING
@@ -365,28 +365,25 @@ function start()
 
     -- Create score text
     score_text = this.world:createEntityEx({
-        gui_text = {text = "Score: 0", font_size = 60},
-        gui_rect = {left_points = 10, top_points = 10}
+        gui_text = {text = "Score: 0", font_size = 60, font = "ui/font/Kenney Future.ttf"},
+        gui_rect = {left_points = 10, top_points = 10},
+        parent = canvas
     })
-    score_text.parent = canvas
-    score_text.gui_text.font = "ui/font/Kenney Future.ttf"
 
     -- Create wave text
     wave_text = this.world:createEntityEx({
-        gui_text = {text = "Wave: 1", font_size = 60, horizontal_align = LumixAPI.TextHAlign.RIGHT},
-        gui_rect = {left_relative = 1, left_points = -320, right_relative = 1, right_points = -10, top_relative = 0, top_points = 10}
+        gui_text = {text = "Wave: 1", font_size = 60, horizontal_align = LumixAPI.TextHAlign.RIGHT, font = "ui/font/Kenney Future.ttf"},
+        gui_rect = {left_relative = 1, left_points = -320, right_relative = 1, right_points = -10, top_relative = 0, top_points = 10},
+        parent = canvas
     })
-    wave_text.parent = canvas
-    wave_text.gui_text.font = "ui/font/Kenney Future.ttf"
 
     -- Create countdown text
     countdown_text = this.world:createEntityEx({
-        gui_text = {text = "", font_size = 40, horizontal_align = LumixAPI.TextHAlign.CENTER, vertical_align = LumixAPI.TextVAlign.MIDDLE},
+        gui_text = {text = "", font_size = 40, horizontal_align = LumixAPI.TextHAlign.CENTER, vertical_align = LumixAPI.TextVAlign.MIDDLE, font = "ui/font/Kenney Future.ttf"},
         gui_rect = {left_relative = 0.5, left_points = -200, right_relative = 0.5, right_points = 200, top_relative = 0.5, top_points = -50, bottom_relative = 0.5, bottom_points = 10},
-        gui_image = {}
+        gui_image = {},
+        parent = canvas
     })
-    countdown_text.parent = canvas
-    countdown_text.gui_text.font = "ui/font/Kenney Future.ttf"
 
     -- Create start wave early button
     local start_wave_button = this.world:createEntityEx({
@@ -408,9 +405,9 @@ function start()
             font_size = 30,
             font = "ui/font/Kenney Future.ttf"
         },
-        lua_script = {}
+        lua_script = {},
+        parent = canvas
     })
-    start_wave_button.parent = canvas
     start_wave_button.lua_script.scripts:add()
     start_wave_button.lua_script[1].onButtonClicked = function()
         start_wave_early = true
@@ -438,9 +435,9 @@ function start()
             gui_image = {
                 sprite = "ui/button_rectangle_border.spr"
             },
-            lua_script = {}
+            lua_script = {},
+            parent = canvas
         })
-        button.parent = canvas
         button.lua_script.scripts:add()
         button.lua_script[1].onButtonClicked = function()
             selected_type = idx
@@ -472,9 +469,9 @@ function start()
                 top_points = -35,
                 bottom_relative = 0.5,
                 bottom_points = 35
-            }
+            },
+            parent = button
         })
-        weapon_image.parent = button
     end
     
     -- Initialize passable grid
@@ -576,8 +573,7 @@ function start()
         path_index[tile.x .. "," .. tile.z] = i
     end
 
-    local tiles_group = this.world:createEntityEx({})
-    tiles_group.name = "tiles_group"
+    local tiles_group = this.world:createEntityEx({name = "tiles_group"})
 
     -- Create grid map
     for x = 1 - 15, GRID_WIDTH + 15 do
@@ -605,13 +601,13 @@ function start()
             end
             local entity_params = {
                 position = pos,
-                model_instance = {source = model}
+                model_instance = {source = model},
+                parent = tiles_group
             }
             if rot then
                 entity_params.rotation = rot
             end
             local tile_entity = this.world:createEntityEx(entity_params)
-            tile_entity.parent = tiles_group
             if override_mat ~= nil then
                 tile_entity.model_instance:setMaterialOverride(0, override_mat)
             end
@@ -620,15 +616,15 @@ function start()
 
     -- Fill all non-path tiles with four trees each at scale 0.5
     local tree_models = {
-        --"models/detail-tree.fbx",
-        --"models/detail-tree-large.fbx",
-        "models/quaternius/PineTree_1.fbx",
-        "models/quaternius/PineTree_2.fbx",
-        "models/quaternius/PineTree_3.fbx",
-        "models/quaternius/PineTree_4.fbx",
-        "models/quaternius/PineTree_5.fbx",
-        "models/quaternius/Resource_PineTree.fbx",
-        "models/quaternius/BirchTree_Dead_4.fbx",
+        "models/detail-tree.fbx",
+        "models/detail-tree-large.fbx",
+        --"models/quaternius/PineTree_1.fbx",
+        --"models/quaternius/PineTree_2.fbx",
+        --"models/quaternius/PineTree_3.fbx",
+        --"models/quaternius/PineTree_4.fbx",
+        --"models/quaternius/PineTree_5.fbx",
+        --"models/quaternius/Resource_PineTree.fbx",
+        --"models/quaternius/BirchTree_Dead_4.fbx",
     }
     -- Offsets within a tile to place 4 models (corners)
     local half_offset = 0.25 * TILE_SPACING
@@ -664,9 +660,9 @@ function start()
                             position = pos,
                             rotation = tree_rot,
                             scale = {tree_scale, tree_scale, tree_scale},
-                            model_instance = {source = tree_models[math.random(1, #tree_models)]}
+                            model_instance = {source = tree_models[math.random(1, #tree_models)]},
+                            parent = tiles_group
                         })
-                        tree.parent = tiles_group
                         table.insert(trees[x][z], tree)
                     end
                 end
@@ -701,9 +697,9 @@ function start()
                         position = pos,
                         rotation = rock_rot,
                         scale = {rock_scale, rock_scale, rock_scale},
-                        model_instance = {source = rock_models[math.random(1, #rock_models)]}
+                        model_instance = {source = rock_models[math.random(1, #rock_models)]},
+                        parent = tiles_group
                     })
-                    rock.parent = tiles_group
                     table.insert(rocks[x][z], rock)
                 end
             end
