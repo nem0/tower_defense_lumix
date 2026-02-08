@@ -42,6 +42,7 @@ local projectiles = {}
 local enemies_data = {}
 local towers_data = {}
 local projectiles_data = {}
+local vfx_entities = {}
 local end_pos = {15, 0, 0}
 local grid_passable = {}
 local path_tiles = {}
@@ -113,6 +114,27 @@ local tower_types = {
         cost = 250
     }
 }
+
+local function spawnVFX(source, position, ttl)
+    local e = this.world:createEntityEx({
+        position = position,
+        particle_emitter = { source = source, autodestroy = true }
+    })
+    table.insert(vfx_entities, {entity = e, ttl = ttl or 1.0})
+    return e
+end
+
+local function spawnMuzzleFlash(position)
+    spawnVFX("tower_defense/particles/muzzle_flash.pat", position, 0.35)
+end
+
+local function spawnHitSpark(position)
+    spawnVFX("tower_defense/particles/hit_spark.pat", position, 0.6)
+end
+
+local function spawnExplosion(position)
+    spawnVFX("tower_defense/particles/explosion.pat", position, 1.6)
+end
 local enemy_types = {
     {
         model = "tower_defense/models/enemy-ufo-a.fbx",
@@ -785,6 +807,10 @@ function spawnProjectile(pos, target, damage, ammo_model, speed, scale)
     })
     projectiles_data[proj] = {target = target, damage = damage, speed = speed}
     table.insert(projectiles, proj)
+
+    proj:createComponent("particle_emitter")
+    proj.particle_emitter.source = "tower_defense/particles/projectile_trail.pat"
+    proj.particle_emitter.autodestroy = false
 end
 
 function hasEnemiesFromWave(wave_num)
@@ -798,6 +824,15 @@ function hasEnemiesFromWave(wave_num)
 end
 
 function update(dt)
+    -- Cleanup one-shot VFX entities
+    for i = #vfx_entities, 1, -1 do
+        local item = vfx_entities[i]
+        item.ttl = item.ttl - dt
+        if item.ttl <= 0 then
+            table.remove(vfx_entities, i)
+        end
+    end
+
     if not placeholder_tower then
         placeholder_tower = this.world:createEntityEx({
             position = {0, -100, 0},
@@ -882,6 +917,10 @@ function update(dt)
         if not data or data.health <= 0 or data.current_index > #data.path then
             if data then 
                 if data.health <= 0 then
+                    if not data.death_fx then
+                        spawnExplosion(enemy.position)
+                        data.death_fx = true
+                    end
                     -- Enemy killed, add score based on type
                     score = score + enemy_types[data.type].hp
                 elseif data.current_index > #data.path then
@@ -927,7 +966,7 @@ function update(dt)
             if math.abs(diff) < AIM_TOLERANCE then
                 -- Shoot: spawn projectile
                 spawnProjectile(tower.position, target, tower_data.damage, tower_data.ammo, tower_data.speed, tower_data.scale)
-                -- Optional: add visual effect or sound
+                spawnMuzzleFlash(tower_data.weapon.position)
                 tower_data.lastShot = 0
             end
         end
@@ -945,7 +984,13 @@ function update(dt)
             proj.position = {proj.position[1] + dir[1] * data.speed * dt, PROJECTILE_OFFSET_Y, proj.position[3] + dir[3] * data.speed * dt}
             local dist = math.sqrt((proj.position[1] - data.target.position[1])^2 + (proj.position[3] - data.target.position[3])^2)
             if dist < 0.5 then
-                enemies_data[data.target].health = enemies_data[data.target].health - data.damage
+                spawnHitSpark(data.target.position)
+                local enemy_data = enemies_data[data.target]
+                enemy_data.health = enemy_data.health - data.damage
+                if enemy_data.health <= 0 and not enemy_data.death_fx then
+                    spawnExplosion(data.target.position)
+                    enemy_data.death_fx = true
+                end
                 proj:destroy()
                 projectiles_data[proj] = nil
             end

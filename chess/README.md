@@ -30,6 +30,7 @@ To run this project, you need the Lumix engine installed on your system.
 The chess set comes from OpenGameArt and is licensed under Creative Commons Attribution 3.0 (CC BY 3.0). See [chess/license.txt](license.txt) for details.
 
 - https://opengameart.org/content/chess-set (Author: elopez7 / Esteban Lopez)
+- [UI Pack](https://kenney.nl/assets/ui-pack) (Author: Kenney)
 
 ## Project Structure
 

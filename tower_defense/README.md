@@ -30,9 +30,11 @@ To run this project, you need the Lumix engine installed on your system.
 
 The 3D models are sourced from Kenney's Tower Defense Kit, licensed under Creative Commons Zero (CC0).
 The UI sprites are sourced from Kenney's UI Pack, also licensed under Creative Commons Zero (CC0).
+The particle effects are sourced from Kenney's Particle Pack, also licensed under Creative Commons Zero (CC0).
 
 - [Tower Defense Kit](https://kenney.nl/assets/tower-defense-kit)
 - [UI Pack](https://kenney.nl/assets/ui-pack)
+- [Particle Pack](https://kenney.nl/assets/particle-pack)
 - [Kenney.nl](https://www.kenney.nl/)
 
 ## Project Structure
