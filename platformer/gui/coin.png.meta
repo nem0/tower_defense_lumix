@@ -1,0 +1,4 @@
+srgb = false
+compress = false
+mip_scale_coverage = -1.000
+normalmap = false

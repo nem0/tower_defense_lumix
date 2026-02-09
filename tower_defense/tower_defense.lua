@@ -387,23 +387,22 @@ function start()
 
     -- Create score text
     score_text = this.world:createEntityEx({
-        gui_text = {text = "Score: 0", font_size = 60, font = "ui/font/Kenney Future.ttf"},
+        gui_text = {text = "Score: 0", font_size = 60, color = {1.0, 1.0, 1.0, 1.0}, font = "ui/font/Kenney Future.ttf"},
         gui_rect = {left_points = 10, top_points = 10},
         parent = canvas
     })
 
     -- Create wave text
     wave_text = this.world:createEntityEx({
-        gui_text = {text = "Wave: 1", font_size = 60, horizontal_align = LumixAPI.TextHAlign.RIGHT, font = "ui/font/Kenney Future.ttf"},
+        gui_text = {text = "Wave: 1", font_size = 60, horizontal_align = LumixAPI.TextHAlign.RIGHT, color = {1.0, 1.0, 1.0, 1.0}, font = "ui/font/Kenney Future.ttf"},
         gui_rect = {left_relative = 1, left_points = -320, right_relative = 1, right_points = -10, top_relative = 0, top_points = 10},
         parent = canvas
     })
 
     -- Create countdown text
     countdown_text = this.world:createEntityEx({
-        gui_text = {text = "", font_size = 40, horizontal_align = LumixAPI.TextHAlign.CENTER, vertical_align = LumixAPI.TextVAlign.MIDDLE, font = "ui/font/Kenney Future.ttf"},
+        gui_text = {text = "", font_size = 40, horizontal_align = LumixAPI.TextHAlign.CENTER, vertical_align = LumixAPI.TextVAlign.MIDDLE, color = {1.0, 1.0, 1.0, 1.0}, font = "ui/font/Kenney Future.ttf"},
         gui_rect = {left_relative = 0.5, left_points = -200, right_relative = 0.5, right_points = 200, top_relative = 0.5, top_points = -50, bottom_relative = 0.5, bottom_points = 10},
-        gui_image = {},
         parent = canvas
     })
 
@@ -425,6 +424,7 @@ function start()
         gui_text = {
             text = "Start Wave Early",
             font_size = 30,
+            color = {1.0, 1.0, 1.0, 1.0},
             font = "ui/font/Kenney Future.ttf"
         },
         lua_script = {},

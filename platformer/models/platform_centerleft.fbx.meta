@@ -1,0 +1,4 @@
+
+physics = "trimesh"
+lod_count = 1
+lod0_distance = 10000.000000

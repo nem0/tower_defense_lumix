@@ -1,0 +1,6 @@
+create_impostor = false
+use_mikktspace = false
+physics = "convex"
+scale = 1.0000000000
+culling_scale = 1.0000000000
+split = false

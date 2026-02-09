@@ -1,0 +1,5 @@
+
+lod_count = 1
+force_skin = true
+skeleton_rel = "Robot.fbx"
+lod0_distance = 10000.000000

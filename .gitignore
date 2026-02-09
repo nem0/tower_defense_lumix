@@ -1,3 +1,4 @@
-.bak
+*.bak
 .lumix
-.prj
+*.prj
+studio.ini
