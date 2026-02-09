@@ -109,6 +109,13 @@ local KEY_SPACE = LumixAPI.Keycode.SPACE
 local KEY_R = LumixAPI.Keycode.R
 local KEY_SHIFT = LumixAPI.Keycode.SHIFT
 
+-- Gamepad button constants (tested on xbox controller)
+local GPAD_BUTTON_START = 7  -- Restart
+local GPAD_AXIS_LEFT_X = 0  -- Turn left/right (right stick X)
+local GPAD_AXIS_LEFT_Y = 1  -- Thrust forward/backward (right stick Y)
+local GPAD_AXIS_LEFT_TRIGGER = 4  -- Left trigger (boost)
+local GPAD_AXIS_RIGHT_TRIGGER = 5  -- Right trigger (shoot)
+
 local ship = {
 	entity = nil,
 	pos = {0, 0, 0},
@@ -139,6 +146,10 @@ local crash_waiting = false
 
 local keys_down = {}
 local keys_pressed = {}
+
+local gamepad_axes = {}
+local gamepad_buttons_down = {}
+local gamepad_buttons_pressed = {}
 
 local canvas = nil
 local score_text = nil
@@ -508,6 +519,12 @@ local function resetGame()
 	crash_waiting = false
 	clearPowerup()
 	pickup_timer = PICKUP_SPAWN_INITIAL
+	-- Clear input state
+	keys_down = {}
+	keys_pressed = {}
+	gamepad_axes = {}
+	gamepad_buttons_down = {}
+	gamepad_buttons_pressed = {}
 	resetShip()
 	spawnAsteroidWave(4)
 	updateGui()
@@ -602,12 +619,37 @@ function onInputEvent(event)
 		if event.down then
 			keys_pressed[event.key_id] = true
 		end
+	elseif event.type == "button" and event.device and event.device.type == "gamepad" then
+		gamepad_buttons_down[event.key_id] = event.down
+		if event.down then
+			gamepad_buttons_pressed[event.key_id] = true
+		end
+	elseif event.type == "axis" and event.device and event.device.type == "gamepad" then
+		-- Gamepad axes: event.axis indicates which axis (0=LTRIGGER, 1=RTRIGGER, 2=LTHUMB, 3=RTHUMB)
+		-- event.x, event.y contain the axis values
+		if event.axis == 3 then  -- RTHUMB (right stick) - used for turning
+			gamepad_axes[GPAD_AXIS_LEFT_X] = event.x
+		elseif event.axis == 2 then  -- LTHUMB (left stick) - used for thrust
+			gamepad_axes[GPAD_AXIS_LEFT_Y] = event.y
+		elseif event.axis == 0 then  -- LTRIGGER
+			gamepad_axes[GPAD_AXIS_LEFT_TRIGGER] = event.x
+		elseif event.axis == 1 then  -- RTRIGGER
+			gamepad_axes[GPAD_AXIS_RIGHT_TRIGGER] = event.x
+		end
 	end
 end
 
 local function consumeKey(key_id)
 	if keys_pressed[key_id] then
 		keys_pressed[key_id] = nil
+		return true
+	end
+	return false
+end
+
+local function consumeGamepadButton(button_id)
+	if gamepad_buttons_pressed[button_id] then
+		gamepad_buttons_pressed[button_id] = nil
 		return true
 	end
 	return false
@@ -641,15 +683,22 @@ local function updateShipMovement(dt)
 	local turn_input = 0
 	if keys_down[KEY_A] then turn_input = turn_input + 1 end
 	if keys_down[KEY_D] then turn_input = turn_input - 1 end
+	-- Add gamepad left stick X axis for turning
+	local gpad_turn = -(gamepad_axes[GPAD_AXIS_LEFT_X] or 0)
+	turn_input = turn_input + gpad_turn
 	ship.rot = ship.rot + turn_input * SHIP_TURN_SPEED * dt
 	local forward = lmath.yawToDir(ship.rot)
 
 	local thrust = 0
 	if keys_down[KEY_W] then thrust = thrust + 1 end
 	if keys_down[KEY_S] then thrust = thrust - 0.6 end
+	-- Add gamepad left stick Y axis for thrust (negative Y = forward)
+	local gpad_thrust = (gamepad_axes[GPAD_AXIS_LEFT_Y] or 0)
+	thrust = thrust + gpad_thrust
 
 	local boost_active = false
-	if keys_down[KEY_SHIFT] and ship.boost_energy > 0 and thrust > 0 then
+	local boost_input = keys_down[KEY_SHIFT] or ((gamepad_axes[GPAD_AXIS_LEFT_TRIGGER] or 0) > 0.5)
+	if boost_input and ship.boost_energy > 0 and thrust > 0 then
 		boost_active = true
 		ship.boost_energy = math.max(0, ship.boost_energy - SHIP_BOOST_DRAIN * dt)
 	else
@@ -838,7 +887,7 @@ function update(dt)
 	end
 	if crash_waiting then
 		-- Pause gameplay while waiting for manual respawn.
-		if consumeKey(KEY_R) then
+		if consumeKey(KEY_R) or consumeGamepadButton(GPAD_BUTTON_START) then
 			crash_waiting = false
 			resetShip()
 		end
@@ -854,7 +903,7 @@ function update(dt)
 
 	if game_over then
 		-- Allow restart from a clean state.
-		if consumeKey(KEY_R) then
+		if consumeKey(KEY_R) or consumeGamepadButton(GPAD_BUTTON_START) then
 			resetGame()
 		end
 		updateGui()
@@ -865,7 +914,8 @@ function update(dt)
 	updateShipMovement(dt)
 
 	local fire_cooldown = (active_powerup.id == "rapid") and RAPID_FIRE_COOLDOWN or BASE_FIRE_COOLDOWN
-	if keys_down[KEY_SPACE] and ship.fire_timer <= 0 then
+	local right_trigger_pressed = (gamepad_axes[GPAD_AXIS_RIGHT_TRIGGER] or 0) > 0.5
+	if (keys_down[KEY_SPACE] or right_trigger_pressed) and ship.fire_timer <= 0 then
 		spawnBullet()
 		ship.fire_timer = fire_cooldown
 	end
