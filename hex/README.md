@@ -29,6 +29,5 @@ Manage a settlement on a hex grid, balancing resources, infrastructure, explorat
 - `hex.lua`: Main game script
 - `hex.unv`: Scene
 - `gameplay.md`: Detailed gameplay mechanics
-- `plan.md`: Development plan and progress
 - `models/`: Environment and structure models
 
