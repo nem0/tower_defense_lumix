@@ -707,7 +707,8 @@ function createPiece(type, color, x, z)
         anim_start_pos = nil,
         anim_target_pos = nil,
         anim_time = 0,
-        anim_duration = 0.5
+        anim_duration = 0.5,
+        has_moved = false
     }
     board[x][z] = piece
     table.insert(pieces, piece)
@@ -878,6 +879,27 @@ function isValidMove(piece, from_x, from_z, to_x, to_z)
         if ((dx == 0 or dz == 0) or math.abs(dx) == math.abs(dz)) and isPathClear(from_x, from_z, to_x, to_z) then return true end
     elseif piece.type == PIECE_TYPES.KING then
         if math.abs(dx) <= 1 and math.abs(dz) <= 1 then return true end
+        -- Castling
+        if dz == 0 and math.abs(dx) == 2 and not piece.has_moved then
+            local side = (dx > 0) and "kingside" or "queenside"
+            local rook_x = (side == "kingside") and 8 or 1
+            local rook = board[rook_x][from_z]
+            if not rook or rook.type ~= PIECE_TYPES.ROOK or rook.has_moved or rook.color ~= piece.color then return false end
+            -- Check path clear
+            local step = (dx > 0) and 1 or -1
+            for i = 1, 2 do
+                local check_x = from_x + i * step
+                if board[check_x][from_z] then return false end
+            end
+            if side == "queenside" and board[from_x - 3][from_z] then return false end
+            -- Check squares not under attack
+            local enemy_color = (piece.color == WHITE) and BLACK or WHITE
+            for i = 0, 2 do
+                local check_x = from_x + i * step
+                if isSquareAttacked(check_x, from_z, enemy_color) then return false end
+            end
+            return true
+        end
     end
 
     return false
@@ -958,75 +980,114 @@ local function recordUndoMove(piece, from_x, from_z, to_x, to_z)
         to_x = to_x,
         to_z = to_z,
         captured = captured_data,
-        prev_turn = current_turn
+        prev_turn = current_turn,
+        prev_has_moved = piece.has_moved,
+        is_castling = false,
+        was_promotion = false
     })
 end
 
 undoMove = function()
-    if #undo_stack == 0 then
-        LumixAPI.logInfo("Undo: no moves to undo")
-        return
-    end
-
-    if dragging or dropping or isAnyPieceAnimating() then
-        LumixAPI.logInfo("Undo: blocked during animation or drag")
-        return
-    end
-
-    ai_thinking = false
-    ai_timer = 0
-    game_over = false
-
-    local move = table.remove(undo_stack)
-    local piece = move.piece
-
-    if not piece then
-        return
-    end
-
-    board[move.to_x][move.to_z] = nil
-    board[move.from_x][move.from_z] = piece
-
-    piece.x = move.from_x
-    piece.z = move.from_z
-    piece.animating = false
-    piece.anim_time = 0
-
-    local home = squareToBasePos(move.from_x, move.from_z)
-    piece.base_pos = {home[1], home[2], home[3]}
-    piece.current_y = PIECE_HEIGHT + PIECE_Y_OFFSET
-    applyPiecePosition(piece)
-
-    if move.captured then
-        local captured = move.captured
-        captured.x = move.to_x
-        captured.z = move.to_z
-        captured.animating = false
-        captured.anim_time = 0
-
-        local captured_home = squareToBasePos(move.to_x, move.to_z)
-        captured.base_pos = {captured_home[1], captured_home[2], captured_home[3]}
-        captured.current_y = PIECE_HEIGHT + PIECE_Y_OFFSET
-        addPieceToList(captured)
-        board[move.to_x][move.to_z] = captured
-        applyPiecePosition(captured)
-    end
-
-    dragging = false
-    dropping = false
-    dragged_piece = nil
-
-    current_turn = move.prev_turn
-    updateTurnText()
-
-    if AI_ENABLED and current_turn == AI_PLAYER and not game_over then
-        ai_timer = 0
-        ai_thinking = true
-        if isKingInCheck(AI_PLAYER) then
-            turn_text.gui_text.text = "AI is in check! Thinking..."
-        else
-            turn_text.gui_text.text = "AI is thinking..."
+    local undos = 0
+    while #undo_stack > 0 and undos < 2 do
+        if dragging or dropping or isAnyPieceAnimating() then
+            LumixAPI.logInfo("Undo: blocked during animation or drag")
+            return
         end
+
+        ai_thinking = false
+        ai_timer = 0
+        game_over = false
+
+        local move = table.remove(undo_stack)
+        local piece = move.piece
+
+        if not piece then
+            return
+        end
+
+        board[move.to_x][move.to_z] = nil
+        board[move.from_x][move.from_z] = piece
+
+        piece.x = move.from_x
+        piece.z = move.from_z
+        piece.animating = false
+        piece.anim_time = 0
+        piece.has_moved = move.prev_has_moved
+
+        -- Handle demotion
+        if move.was_promotion then
+            piece.type = move.old_type
+            -- Rebuild parts for old piece type
+            for _, part in ipairs(piece.parts) do
+                if part.entity then
+                    part.entity:destroy()
+                end
+            end
+            piece.parts = buildChessPieceParts(piece.type, piece.color, piece.base_pos, piece.x, piece.z)
+        end
+
+        local home = squareToBasePos(move.from_x, move.from_z)
+        piece.base_pos = {home[1], home[2], home[3]}
+        piece.current_y = PIECE_HEIGHT + PIECE_Y_OFFSET
+        applyPiecePosition(piece)
+
+        if move.is_castling then
+            local rook = move.rook
+            board[move.rook_to_x][move.rook_from_z] = nil
+            board[move.rook_from_x][move.rook_from_z] = rook
+            rook.x = move.rook_from_x
+            rook.z = move.rook_from_z
+            rook.animating = false
+            rook.anim_time = 0
+            rook.has_moved = move.rook_prev_has_moved
+            local rook_home = squareToBasePos(move.rook_from_x, move.rook_from_z)
+            rook.base_pos = {rook_home[1], rook_home[2], rook_home[3]}
+            rook.current_y = PIECE_HEIGHT + PIECE_Y_OFFSET
+            applyPiecePosition(rook)
+        end
+
+        if move.captured then
+            local captured = move.captured
+            captured.x = move.to_x
+            captured.z = move.to_z
+            captured.animating = false
+            captured.anim_time = 0
+
+            local captured_home = squareToBasePos(move.to_x, move.to_z)
+            captured.base_pos = {captured_home[1], captured_home[2], captured_home[3]}
+            captured.current_y = PIECE_HEIGHT + PIECE_Y_OFFSET
+            addPieceToList(captured)
+            board[move.to_x][move.to_z] = captured
+            applyPiecePosition(captured)
+        end
+
+        current_turn = move.prev_turn
+        updateTurnText()
+
+        undos = undos + 1
+    end
+
+    if undos > 0 then
+        dragging = false
+        dropping = false
+        dragged_piece = nil
+
+        if AI_ENABLED and current_turn == AI_PLAYER and not game_over then
+            ai_timer = 0
+            ai_thinking = true
+            if isKingInCheck(AI_PLAYER) then
+                turn_text.gui_text.text = "AI is in check! Thinking..."
+            else
+                turn_text.gui_text.text = "AI is thinking..."
+            end
+        end
+    end
+
+    if undos == 0 then
+        LumixAPI.logInfo("Undo: no moves to undo")
+    else
+        LumixAPI.logInfo("Undid " .. undos .. " move(s)")
     end
 end
 
@@ -1071,7 +1132,9 @@ restartGame = function()
 end
 
 function movePiece(piece, to_x, to_z)
-    recordUndoMove(piece, piece.x, piece.z, to_x, to_z)
+    local from_x = piece.x
+    local from_z = piece.z
+    recordUndoMove(piece, from_x, from_z, to_x, to_z)
     -- Capture if there's a piece
     if board[to_x][to_z] then
         local captured = board[to_x][to_z]
@@ -1086,6 +1149,55 @@ function movePiece(piece, to_x, to_z)
     board[to_x][to_z] = piece
     piece.x = to_x
     piece.z = to_z
+
+    -- Handle castling
+    if piece.type == PIECE_TYPES.KING and math.abs(to_x - from_x) == 2 then
+        local side = (to_x > from_x) and "kingside" or "queenside"
+        local rook_from_x = (side == "kingside") and 8 or 1
+        local rook_to_x = (side == "kingside") and (from_x + 1) or (from_x - 1)
+        local rook = board[rook_from_x][from_z]
+        if rook then
+            -- Update undo record
+            local move = undo_stack[#undo_stack]
+            move.is_castling = true
+            move.rook = rook
+            move.rook_from_x = rook_from_x
+            move.rook_to_x = rook_to_x
+            move.rook_prev_has_moved = rook.has_moved
+
+            board[rook_from_x][from_z] = nil
+            board[rook_to_x][from_z] = rook
+            rook.x = rook_to_x
+            rook.z = from_z
+            rook.has_moved = true
+            local rook_pos = squareToBasePos(rook_to_x, from_z)
+            rook.anim_start_pos = {rook.base_pos[1], rook.current_y, rook.base_pos[3]}
+            rook.anim_target_pos = {rook_pos[1], PIECE_HEIGHT + PIECE_Y_OFFSET, rook_pos[3]}
+            rook.anim_lift = piece.anim_lift or 0.5
+            rook.anim_time = 0
+            rook.anim_duration = piece.anim_duration
+            rook.animating = true
+        end
+    end
+
+    -- Handle pawn promotion
+    if piece.type == PIECE_TYPES.PAWN and ((piece.color == WHITE and to_z == 8) or (piece.color == BLACK and to_z == 1)) then
+        local old_type = piece.type
+        piece.type = PIECE_TYPES.QUEEN
+        -- Rebuild parts for new piece type
+        for _, part in ipairs(piece.parts) do
+            if part.entity then
+                part.entity:destroy()
+            end
+        end
+        piece.parts = buildChessPieceParts(piece.type, piece.color, piece.base_pos, piece.x, piece.z)
+        -- Update undo record
+        local move = undo_stack[#undo_stack]
+        move.was_promotion = true
+        move.old_type = old_type
+    end
+
+    piece.has_moved = true
 
     -- Start animation
     local target_pos = squareToBasePos(to_x, to_z)
@@ -1245,7 +1357,9 @@ function update(td)
                 piece.current_y = piece.anim_target_pos[2]
                 piece.base_pos = {piece.anim_target_pos[1], piece.anim_target_pos[2], piece.anim_target_pos[3]}
                 applyPiecePosition(piece)
-                switchTurn()
+                if not isAnyPieceAnimating() then
+                    switchTurn()
+                end
             end
         end
     end
