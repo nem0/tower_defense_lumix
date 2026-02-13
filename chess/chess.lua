@@ -759,6 +759,10 @@ function onInputEvent(event)
                 end
             end
 
+            if not hit_pos then
+                return
+            end
+
             local target_x, target_z = getSquareFromPosition(hit_pos)
             if not target_x or not target_z then
                 if not event.down and dragging and dragged_piece then
